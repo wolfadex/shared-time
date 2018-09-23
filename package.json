@@ -1,8 +1,9 @@
 {
-  "name": "shared-time",
+  "name": "tahi",
   "version": "1.0.0",
   "author": "Wolfgang Schuster <wolfadex@gmail.com>",
   "license": "MIT",
+  "descrption": "A shared peer-to-peer state",
   "scripts": {
     "dev": "webpack-dev-server"
   },

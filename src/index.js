@@ -24,7 +24,6 @@ const store = createStore({
         return state;
     }
   },
-  peerId: `${Date.now()}`,
 });
 
 p.on('open', (id) => {

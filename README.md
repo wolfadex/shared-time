@@ -1,18 +1,54 @@
-# shared-time
+# tahi
 
-A shared redux-like state for multiple users connected by WebRTC. Currently uses [PeerJS](https://peerjs.com/) but any type of WebRTC data connection should work.
+A shared peer-to-peer state for multiple users connected by WebRTC.
 
-# dev
+# use
 
-- Install [yarn](https://yarnpkg.com/)
-- Run `yarn`
-- Run `yarn dev`
-- Open 2 browser windows
-- Open the dev tools for both windows
-- Paste the Peer ID from 1 window into the 2nd text field of the other window and click join
-- Type single characters into the first text field of either window and click `Send`
-- There's currently a simulated 5 second delay to demonstrate that the states are equal on both sides when near simultaneous or simultaneous actions occur.
+- Install `yarn add tahi` or `npm install --save tahi`
+
+```js
+// Using PeerJS
+import { createStore } from 'tahi';
+import Peer from 'peerjs';
+
+const store = createStore({
+  reducer: (state, action) => {
+    // Return next state
+  },
+  preloadedState: {}, // Optional: The initial state of your store
+});
+
+const peer = new Peer();
+
+peer.on('open', (id) => {
+  store.setId(id); // A unique ID for each connected user
+});
+
+peer.on('connection', (connection) => {
+  store.addPeer(connection.peer, connection);
+});
+
+const connection = peer.connect('<other_users_peerjs_id>');
+
+connection.on('open', () => {
+  store.addPeer(connection.peer, connection);
+});
+
+const unsubscribe = store.subscribe(() => {
+  // Occurs for all connected users when 'SOME_ACTION_TYPE' is dispatched
+  const nextState = store.getState(); // The new state
+});
+
+store.dispatch({
+  payload: 'some data of whatever kind',
+  type: 'SOME_ACTION_TYPE',
+});
+```
 
 # todo
 
-- [ ] Make this list
+- [x] Make this list
+- [ ] Make example with PeerJS
+- [ ] Make example with Vanilla WebRTC
+- [ ] Make documentation
+- [ ] Make compatible with redux middleware
