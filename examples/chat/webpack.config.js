@@ -6,7 +6,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 module.exports = () => {
   return {
     mode: isProduction ? 'production' : 'development',
-    devtool: isProduction ? null : 'cheap-module-eval-source-map',
+    devtool: isProduction ? false : 'cheap-module-eval-source-map',
     entry: ['@babel/polyfill', path.join(__dirname, 'src/index.js')],
     output: {
       path: path.join(__dirname, 'dist'),

@@ -1,106 +1,120 @@
-import React, { Component } from 'react';
-import { render } from 'react-dom';
-import Peer from 'peerjs';
-import { createStore } from './timestore';
-import { Provider, connect } from './timestore/components';
+export const createStore = ({ reducer, preloadedState }) => {
+  let initialState = preloadedState || reducer(undefined, { type: '@@INIT' });
+  let currentState = initialState;
+  let currentListeners = [];
+  let nextListeners = currentListeners;
+  let isDispatching = false;
+  let messages = [];
+  let currentMessageIndex = -1;
+  let peers = {};
+  let peerId;
 
-const rootEl = document.createElement('div');
-document.body.appendChild(rootEl);
-
-const p = new Peer({ key: 'lwjd5qra8257b9' });
-
-const initialState = {
-  text: [],
-};
-const store = createStore({
-  reducer: (state = initialState, { type, ...payload }) => {
-    switch (type) {
-      case 'INSERT':
-        return {
-          ...state,
-          text: [...state.text, payload.char],
-        };
-      default:
-        return state;
+  function ensureCanMutateNextListeners() {
+    if (nextListeners === currentListeners) {
+      nextListeners = currentListeners.slice();
     }
-  },
-});
-
-p.on('open', (id) => {
-  console.log('Peer ID:', id);
-  store.setId(id);
-});
-
-p.on('connection', (connection) => {
-  store.addPeer(connection.peer, connection);
-  connection.on('data', (data) => {
-    console.log('connection', data);
-    // dispatch(data);
-  });
-});
-
-const mapStateToProps = ({ text }) => ({
-  text,
-});
-
-@connect(mapStateToProps)
-class Child extends Component {
-  state = {
-    char: '',
-    id: '',
-  };
-
-  render() {
-    const { text = [], dispatch } = this.props;
-    const { char, id } = this.state;
-
-    return (
-      <div>
-        Text:
-        <p>{text.join('')}</p>
-        <input
-          type="text"
-          value={char}
-          onChange={({ target: { value } }) => this.setState({ char: value })}
-          maxLength="1"
-        />
-        <button
-          type="button"
-          disabled={char.length === 0}
-          onClick={() => {
-            dispatch({
-              char,
-              type: 'INSERT',
-            });
-          }}
-        >
-          Send
-        </button>
-        <input
-          type="text"
-          value={id}
-          onChange={({ target: { value } }) => this.setState({ id: value })}
-        />
-        <button
-          onClick={() => {
-            const connection = p.connect(id);
-
-            connection.on('open', () => {
-              console.log('connection', connection);
-              store.addPeer(connection.peer, connection);
-            });
-          }}
-        >
-          Join
-        </button>
-      </div>
-    );
   }
-}
 
-render(
-  <Provider value={store}>
-    <Child />
-  </Provider>,
-  rootEl,
-);
+  function asyncDispatch(message) {
+    const { timestamp, id, action } = message;
+
+    try {
+      isDispatching = true;
+
+      const { timestamp: mostRecent = 0 } = messages[currentMessageIndex] || {};
+
+      if (timestamp > mostRecent) {
+        messages.push(message);
+        currentState = reducer({ ...currentState }, action);
+      } else {
+        const insertIndex = messages.findIndex(({ timestamp: t, id: i }) => {
+          return timestamp > t || (timestamp === t && id < i);
+        });
+
+        messages.splice(insertIndex + 1, 0, message);
+        currentState = messages.reduce(
+          (nextState, { action }) => reducer(nextState, action),
+          initialState,
+        );
+      }
+    } finally {
+      isDispatching = false;
+      currentMessageIndex++;
+    }
+
+    const listeners = (currentListeners = nextListeners);
+    for (let i = 0; i < listeners.length; i++) {
+      const listener = listeners[i];
+      listener();
+    }
+  }
+
+  return {
+    getState: () => ({ ...currentState }),
+    subscribe: (listener) => {
+      if (typeof listener !== 'function') {
+        throw new Error('Expected the listener to be a function.');
+      }
+
+      if (isDispatching) {
+        throw new Error(
+          'You may not call store.subscribe() while the reducer is executing.',
+        );
+      }
+
+      let isSubscribed = true;
+
+      ensureCanMutateNextListeners();
+      nextListeners.push(listener);
+
+      return () => {
+        if (!isSubscribed) {
+          return;
+        }
+
+        if (isDispatching) {
+          throw new Error(
+            'You may not unsubscribe while the reducer is executing.',
+          );
+        }
+
+        isSubscribed = false;
+
+        ensureCanMutateNextListeners();
+        const index = nextListeners.indexOf(listener);
+        nextListeners.splice(index, 1);
+      };
+    },
+    dispatch: (action) => {
+      const message = {
+        timestamp: Date.now(),
+        id: peerId,
+        action,
+      };
+      asyncDispatch(message);
+
+      Object.values(peers).forEach((peer) => {
+        peer.send(message);
+      });
+
+      return action;
+    },
+    // onMessage: (message) => {
+    //   asyncDispatch(message);
+    // },
+    addPeer: (id, peer) => {
+      peers[id] = peer;
+      peer.on('data', (message) => {
+        asyncDispatch(message);
+      });
+    },
+    removePeer: (id) => {
+      delete peers[id];
+    },
+    setId: (id) => {
+      peerId = id;
+    },
+    // onOpen: () => void;
+    // onClose: () => void;
+  };
+};

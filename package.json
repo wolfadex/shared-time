@@ -1,17 +1,15 @@
 {
   "name": "tahi",
-  "version": "1.0.0",
+  "version": "1.0.0-beta.0",
   "author": "Wolfgang Schuster <wolfadex@gmail.com>",
   "license": "MIT",
+  "main": "dist/main.js",
   "descrption": "A shared peer-to-peer state",
   "scripts": {
-    "dev": "webpack-dev-server"
+    "dev": "rollup -c rollup.config.js"
   },
   "dependencies": {
-    "@babel/polyfill": "^7.0.0",
-    "peerjs": "^0.3.16",
-    "react": "^16.5.2",
-    "react-dom": "^16.5.2"
+    "@babel/polyfill": "^7.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.1.0",
@@ -19,17 +17,12 @@
     "@babel/plugin-proposal-decorators": "^7.1.0",
     "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
     "@babel/preset-env": "^7.1.0",
-    "@babel/preset-react": "^7.0.0",
-    "@types/react": "^16.4.14",
-    "@types/react-dom": "^16.0.7",
     "babel-loader": "^8.0.2",
-    "html-webpack-plugin": "^3.2.0",
     "prettier": "^1.14.3",
-    "prop-types": "^15.6.2",
     "react-styleguidist": "^7.3.8",
-    "typescript": "^3.0.3",
-    "webpack": "^4.19.1",
-    "webpack-cli": "^3.1.0",
-    "webpack-dev-server": "^3.1.8"
+    "rollup": "^0.66.2",
+    "rollup-plugin-babel": "^4.0.3",
+    "rollup-plugin-node-resolve": "^3.4.0",
+    "rollup-plugin-terser": "^3.0.0"
   }
 }

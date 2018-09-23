@@ -2,7 +2,11 @@
 
 A shared peer-to-peer state for multiple users connected by WebRTC.
 
-# use
+## demo
+
+[Basic Chat](http://tahi-chat.surge.sh/)
+
+## use
 
 - Install `yarn add tahi` or `npm install --save tahi`
 
@@ -45,10 +49,10 @@ store.dispatch({
 });
 ```
 
-# todo
+## todo
 
 - [x] Make this list
-- [ ] Make example with PeerJS
+- [x] Make example with PeerJS
 - [ ] Make example with Vanilla WebRTC
 - [ ] Make documentation
 - [ ] Make compatible with redux middleware
