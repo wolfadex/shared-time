@@ -1,6 +1,6 @@
 {
   "name": "tahi",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.3",
   "author": "Wolfgang Schuster <wolfadex@gmail.com>",
   "license": "MIT",
   "repository": {
@@ -17,16 +17,13 @@
     "peer"
   ],
   "scripts": {
-    "dev": "rollup -c rollup.config.js"
+    "build": "rollup -c rollup.config.js"
   },
   "dependencies": {
     "@babel/polyfill": "^7.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.1.0",
-    "@babel/plugin-proposal-class-properties": "^7.1.0",
-    "@babel/plugin-proposal-decorators": "^7.1.0",
-    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
     "@babel/preset-env": "^7.1.0",
     "babel-loader": "^8.0.2",
     "prettier": "^1.14.3",

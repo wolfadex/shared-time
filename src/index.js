@@ -25,7 +25,7 @@ export const createStore = ({ reducer, preloadedState }) => {
 
       if (timestamp > mostRecent) {
         messages.push(message);
-        currentState = reducer({ ...currentState }, action);
+        currentState = reducer(Object.assign({}, currentState), action);
       } else {
         const insertIndex = messages.findIndex(({ timestamp: t, id: i }) => {
           return timestamp > t || (timestamp === t && id < i);
@@ -50,7 +50,7 @@ export const createStore = ({ reducer, preloadedState }) => {
   }
 
   return {
-    getState: () => ({ ...currentState }),
+    getState: () => Object.assign({}, currentState),
     subscribe: (listener) => {
       if (typeof listener !== 'function') {
         throw new Error('Expected the listener to be a function.');

@@ -4385,9 +4385,9 @@ surge@^0.20.1:
     tarr "1.0.3"
     url-parse-as-address "1.0.0"
 
-tahi@^1.0.0-beta.0:
-  version "1.0.0-beta.0"
-  resolved "https://registry.yarnpkg.com/tahi/-/tahi-1.0.0-beta.0.tgz#31be765bfa9cf603ca19c381265af6fbecc0fc85"
+tahi@^1.0.0-beta.3:
+  version "1.0.0-beta.3"
+  resolved "https://registry.yarnpkg.com/tahi/-/tahi-1.0.0-beta.3.tgz#affeecc66972bfe197deb38d1145dc8924121c95"
   dependencies:
     "@babel/polyfill" "^7.0.0"
 
