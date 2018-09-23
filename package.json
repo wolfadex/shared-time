@@ -1,9 +1,12 @@
 {
   "name": "tahi",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0-beta.1",
   "author": "Wolfgang Schuster <wolfadex@gmail.com>",
   "license": "MIT",
-  "repository": "https://github.com/wolfadex/tahi",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wolfadex/tahi"
+  },
   "main": "dist/main.js",
   "descrption": "A shared peer-to-peer state",
   "keywords": [
