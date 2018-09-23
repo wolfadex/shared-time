@@ -5,6 +5,13 @@
   "license": "MIT",
   "main": "dist/main.js",
   "descrption": "A shared peer-to-peer state",
+  "keywords": [
+    "state",
+    "webrtc",
+    "redux",
+    "share",
+    "peer"
+  ],
   "scripts": {
     "dev": "rollup -c rollup.config.js"
   },
