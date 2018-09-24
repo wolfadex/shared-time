@@ -92,20 +92,16 @@ export const createStore = ({ reducer, preloadedState }) => {
       };
       asyncDispatch(message);
 
-      Object.values(peers).forEach((peer) => {
-        peer.send(message);
+      Object.values(peers).forEach((send) => {
+        send(message);
       });
 
       return action;
     },
-    // onMessage: (message) => {
-    //   asyncDispatch(message);
-    // },
-    addPeer: (id, peer) => {
-      peers[id] = peer;
-      peer.on('data', (message) => {
-        asyncDispatch(message);
-      });
+    addPeer: (id, send) => {
+      peers[id] = send;
+
+      return asyncDispatch;\
     },
     removePeer: (id) => {
       delete peers[id];
@@ -118,7 +114,5 @@ export const createStore = ({ reducer, preloadedState }) => {
       });
     },
     getId: () => peerId,
-    // onOpen: () => void;
-    // onClose: () => void;
   };
 };

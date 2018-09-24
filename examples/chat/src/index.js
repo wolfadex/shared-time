@@ -36,7 +36,11 @@ p.on('open', (id) => {
 });
 
 p.on('connection', (connection) => {
-  store.addPeer(connection.peer, connection);
+  const onMessage = store.addPeer(connection.peer, (message) => {
+    connection.send(message);
+  });
+
+  connection.on('data', onMessage);
   // connection.on('data', (data) => {
   //   console.log('connection', data);
   //   // dispatch(data);
@@ -97,7 +101,7 @@ class Child extends Component {
             dispatch({
               text,
               time: Date.now(),
-              id: peerId,
+              id: getId(),
               type: 'INSERT',
             });
             this.setState({
@@ -137,7 +141,11 @@ class Child extends Component {
             const connection = p.connect(id);
 
             connection.on('open', () => {
-              store.addPeer(connection.peer, connection);
+              const onMessage = store.addPeer(connection.peer, (message) => {
+                connection.send(message);
+              });
+
+              connection.on('data', onMessage);
               this.setState({
                 id: '',
               });
