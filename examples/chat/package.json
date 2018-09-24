@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "webpack-dev-server",
-    "build": "NODE_ENV=production webpack",
+    "build": "rm -rf dist && NODE_ENV=production webpack",
     "deploy": "yarn build && cd ./dist && surge --domain tahi-chat.surge.sh"
   },
   "dependencies": {

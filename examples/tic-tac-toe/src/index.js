@@ -12,12 +12,35 @@ import peerConnection, {
 const rootEl = document.createElement('div');
 document.body.appendChild(rootEl);
 
-// const p = new Peer({ key: 'lwjd5qra8257b9' });
+const isWinner = (board) => {
+  const line1 =
+    board[0] != null && board[0] === board[1] && board[0] === board[2];
+  const line2 =
+    board[3] != null && board[3] === board[4] && board[3] === board[5];
+  const line3 =
+    board[6] != null && board[6] === board[7] && board[6] === board[8];
+  const line4 =
+    board[0] != null && board[0] === board[3] && board[0] === board[6];
+  const line5 =
+    board[1] != null && board[1] === board[4] && board[1] === board[7];
+  const line6 =
+    board[2] != null && board[2] === board[5] && board[2] === board[8];
+  const diagonal1 =
+    board[0] != null && board[0] === board[4] && board[0] === board[8];
+  const diagonal2 =
+    board[2] != null && board[2] === board[4] && board[2] === board[6];
+
+  return (
+    line1 || line2 || line3 || line4 || line5 || line6 || diagonal1 || diagonal2
+  );
+};
 
 const initialState = {
   board: [null, null, null, null, null, null, null, null, null],
   turn: 'X',
-  users: {},
+  host: null,
+  guest: null,
+  winner: null,
 };
 const store = createStore({
   reducer: (state = initialState, { type, ...payload }) => {
@@ -26,22 +49,34 @@ const store = createStore({
         return {
           ...state,
           board: initialState.board,
+          winner: null,
+          turn: 'X',
         };
       case 'SET_SQUARE': {
         const nextBoard = [...state.board];
 
-        nextBoard[payload.index] = payload.piece;
+        nextBoard[payload.index] = payload.symbol;
 
         return {
           ...state,
           board: nextBoard,
           turn: state.turn === 'X' ? 'O' : 'X',
+          winner: nextBoard.includes(null)
+            ? isWinner(nextBoard)
+              ? state.turn
+              : null
+            : 'none',
         };
       }
-      case 'ADD_USER':
+      case 'ADD_HOST':
         return {
           ...state,
-          users: { ...state.users, [payload.id]: payload.turn },
+          host: payload.id,
+        };
+      case 'ADD_GUEST':
+        return {
+          ...state,
+          guest: payload.id,
         };
       default:
         return state;
@@ -49,106 +84,96 @@ const store = createStore({
   },
 });
 
-// peerConnection.onicecandidate = (e) => {
-//   if (e.candidate) {
-//     console.log('carl', e);
-//   } else {
-//     console.log('steve', e);
-//   }
-// };
+peerConnection.oniceconnectionstatechange = () => {
+  console.log('ice state change', peerConnection.iceConnectionState);
+};
 
-// !e.candidate ||
-// remoteConnection.addIceCandidate(e.candidate).catch(handleAddCandidateError);
+peerConnection.onicecandidate = (e) => {
+  if (!e.candidate) {
+    console.log('steve no candidate', e);
+    return;
+  } else {
+    console.log('steve candidate', peerConnection.localDescription);
+    const id = btoa(JSON.stringify(peerConnection.localDescription));
 
-// peerConnection.ondatachannel = (e) => {
-//   console.log('carl', e.channel);
-// };
+    store.setId(id);
+    store.dispatch({
+      id,
+      type:
+        peerConnection.localDescription.type === 'offer'
+          ? 'ADD_HOST'
+          : 'ADD_GUEST',
+    });
+  }
+};
 
 let dataChannel;
 
-function host() {
+function hostGame() {
   dataChannel = createDataChannel();
 
   dataChannel.onopen = () => {
     console.log('Host ready');
+    store.forwardMessages((message) => {
+      dataChannel.send(JSON.stringify(message));
+    });
+  };
+  dataChannel.onclose = () => {
+    console.log('Host closed');
   };
   dataChannel.onmessage = ({ data }) => {
     store.dispatch(data);
   };
 
-  createOffer().then((offer) => {
-    const id = btoa(JSON.stringify(offer));
-
-    store.setId(id);
-    store.dispatch({
-      id,
-      turn: 'X',
-      type: 'ADD_USER',
-    });
-  });
+  createOffer();
 }
 
 function join(offer) {
   const parsedOffer = new RTCSessionDescription(JSON.parse(atob(offer)));
 
-  peerConnection.ondatachannel = () => {
+  peerConnection.ondatachannel = (e) => {
     dataChannel = e.channel || e; // Chrome sends event, FF sends raw channel
 
-    // dataChannel.onopen = (e) => {
-    //   // $('#waitForConnection').modal('hide');
-    //   // $('#waitForConnection').remove();
-    // };
-    // dataChannel.onmessage = ({ data }) => {
-    //   store.dispatch(data);
-    // };
-  };
-
-  const onMessage = store.addPeer(offer, dataChannel.send);
-
-  dataChannel.onmessage = ({ data }) => {
-    onMessage(data);
-  };
-
-  answerOffer(parsedOffer).then((answer) => {
-    const id = btoa(JSON.stringify(answer));
-
-    store.setId(id);
-    store.dispatch({
-      id,
-      turn: 'O',
-      type: 'ADD_USER',
+    const onMessage = store.addPeer(offer, (message) => {
+      dataChannel.send(JSON.stringify(message));
     });
-  });
+
+    dataChannel.onopen = () => {
+      console.log('Guest ready');
+      store.forwardMessages((message) => {
+        dataChannel.send(JSON.stringify(message));
+      });
+    };
+    dataChannel.onclose = () => {
+      console.log('Guest closed');
+    };
+    dataChannel.onmessage = ({ data }) => {
+      onMessage(JSON.parse(data));
+    };
+  };
+
+  answerOffer(parsedOffer);
 }
 
 function confirmHost(answer) {
   const parsedAnswer = new RTCSessionDescription(JSON.parse(atob(answer)));
   completeOffer(parsedAnswer);
 
-  const onMessage = store.addPeer(answer, dataChannel.send);
+  const onMessage = store.addPeer(answer, (message) => {
+    dataChannel.send(JSON.stringify(message));
+  });
 
   dataChannel.onmessage = ({ data }) => {
-    onMessage(data);
+    onMessage(JSON.parse(data));
   };
 }
 
-// p.on('open', (id) => {
-//   console.log('Peer ID:', id);
-//   store.setId(id);
-// });
-
-// p.on('connection', (connection) => {
-//   store.addPeer(connection.peer, connection);
-//   // connection.on('data', (data) => {
-//   //   console.log('connection', data);
-//   //   // dispatch(data);
-//   // });
-// });
-
-const mapStateToProps = ({ board, turn, users }) => ({
+const mapStateToProps = ({ board, turn, host, guest, winner }) => ({
   board,
   turn,
-  users,
+  host,
+  guest,
+  winner,
 });
 
 @connect(mapStateToProps)
@@ -158,15 +183,26 @@ class Child extends Component {
   };
 
   render() {
-    const { board = [], turn, dispatch, getId, users } = this.props;
+    const {
+      board = [],
+      turn,
+      dispatch,
+      getId,
+      host,
+      guest,
+      winner,
+    } = this.props;
     const { id } = this.state;
-
+    const userSymbol = getId() === host ? 'X' : 'O';
+    const yourTurn = userSymbol === turn;
+    console.log('carl', host, guest);
     return (
       <div
         style={{
           alignItems: 'center',
           bottom: '0',
           display: 'flex',
+          flexDirection: 'column',
           justifyContent: 'center',
           left: '0',
           position: 'absolute',
@@ -174,36 +210,80 @@ class Child extends Component {
           top: '0',
         }}
       >
-        {Object.keys(users).length === 2 && (
-          <div
+        {host &&
+          guest && (
+            <div
+              style={{
+                fontSize: '4rem',
+              }}
+            >
+              {(() => {
+                if (userSymbol === winner) {
+                  return 'You Win!';
+                } else if (winner === 'none') {
+                  return `It's a Draw!`;
+                } else if (winner == null) {
+                  return yourTurn ? 'Your Turn' : 'Their Turn';
+                } else {
+                  return 'You Lose';
+                }
+              })()}
+            </div>
+          )}
+        {host &&
+          guest && (
+            <div
+              style={{
+                display: 'grid',
+              }}
+            >
+              {board.map((tile, i) => (
+                <button
+                  key={i}
+                  style={{
+                    alignItems: 'center',
+                    border: '1px solid black',
+                    cursor: yourTurn ? 'pointer' : 'inherit',
+                    display: 'flex',
+                    fontSize: '4rem',
+                    gridColumn: `${(i % 3) + 1}`,
+                    gridRow: `${Math.floor(i / 3) + 1}`,
+                    height: '6rem',
+                    justifyContent: 'center',
+                    width: '6rem',
+                  }}
+                  onClick={() => {
+                    if (yourTurn && !tile) {
+                      dispatch({
+                        symbol: userSymbol,
+                        index: i,
+                        type: 'SET_SQUARE',
+                      });
+                    }
+                  }}
+                >
+                  {tile}
+                </button>
+              ))}
+            </div>
+          )}
+        {winner && (
+          <button
             style={{
-              display: 'grid',
+              cursor: 'pointer',
+              fontSize: '2rem',
+              marginTop: '1rem',
+            }}
+            onClick={() => {
+              dispatch({
+                type: 'RESET_BOARD',
+              });
             }}
           >
-            {board.map((tile, i) => (
-              <button
-                key={i}
-                style={{
-                  alignItems: 'center',
-                  border: '1px solid black',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  gridColumn: `${(i % 3) + 1}`,
-                  gridRow: `${Math.floor(i / 3) + 1}`,
-                  height: '6rem',
-                  justifyContent: 'center',
-                  width: '6rem',
-                }}
-                onClick={() => {
-                  dispatch({});
-                }}
-              >
-                {tile}
-              </button>
-            ))}
-          </div>
+            New Game
+          </button>
         )}
-        {Object.keys(users).length < 2 && (
+        {!(host && guest) && (
           <form
             style={{
               display: 'flex',
@@ -212,14 +292,6 @@ class Child extends Component {
             onSubmit={(e) => {
               e.preventDefault();
               join(id);
-              // const connection = p.connect(id);
-
-              // connection.on('open', () => {
-              //   store.addPeer(connection.peer, connection);
-              //   this.setState({
-              //     id: '',
-              //   });
-              // });
             }}
           >
             <label
@@ -263,9 +335,9 @@ class Child extends Component {
                 style={{
                   width: '8rem',
                 }}
-                disabled={Object.keys(users).length !== 0}
+                disabled={host || guest}
                 onClick={() => {
-                  host();
+                  hostGame();
                 }}
               >
                 Host
@@ -275,7 +347,7 @@ class Child extends Component {
                 style={{
                   width: '8rem',
                 }}
-                disabled={Object.keys(users).length !== 1 && id.length === 0}
+                disabled={guest || !host || id.length === 0}
                 onClick={() => {
                   confirmHost(id);
                 }}
@@ -286,7 +358,7 @@ class Child extends Component {
                 style={{
                   width: '8rem',
                 }}
-                disabled={id.length === 0 || getId()}
+                disabled={host || id.length === 0 || getId()}
               >
                 Join
               </button>

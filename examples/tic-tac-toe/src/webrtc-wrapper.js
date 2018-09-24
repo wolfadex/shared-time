@@ -92,7 +92,8 @@ peerConnection.onicecandidate = (e) => {
   }
 };
 
-peerConnection.onconnection = () => {
+peerConnection.onconnection = (e) => {
+  console.log('carl connected', e);
   // console.log('Datachannel connected');
   // writeToChatLog('Datachannel connected', 'text-success');
   // $('#waitForConnection').modal('hide');
@@ -105,13 +106,13 @@ peerConnection.onconnection = () => {
 };
 
 peerConnection.onsignalingstatechange = (state) => {
-  console.info('signaling state change:', state);
+  // console.info('signaling state change:', state);
 };
 peerConnection.oniceconnectionstatechange = (state) => {
-  console.info('ice connection state change:', state);
+  // console.info('ice connection state change:', state);
 };
 peerConnection.onicegatheringstatechange = (state) => {
-  console.info('ice gathering state change:', state);
+  // console.info('ice gathering state change:', state);
 };
 
 export const completeOffer = (answer) => {
@@ -152,18 +153,6 @@ export const completeOffer = (answer) => {
 /* THIS IS BOB, THE ANSWERER/RECEIVER */
 /* THIS IS BOB, THE ANSWERER/RECEIVER */
 
-// peerConnection.ondatachannel = (e) => {
-//   const datachannel = e.channel || e; // Chrome sends event, FF sends raw channel
-
-//   datachannel.onopen = (e) => {
-//     // $('#waitForConnection').modal('hide');
-//     // $('#waitForConnection').remove();
-//   };
-//   datachannel.onmessage = (e) => {
-//     // e.data
-//   };
-// };
-
 export const answerOffer = (offer) => {
   return new Promise((resolve, reject) => {
     peerConnection.setRemoteDescription(offer);
@@ -174,10 +163,10 @@ export const answerOffer = (offer) => {
   });
 };
 
-peerConnection.onicecandidate = (e) => {
-  if (e.candidate == null) {
-    // $('#localAnswer').html(JSON.stringify(peerConnection.localDescription));
-  }
-};
+// peerConnection.onicecandidate = (e) => {
+//   if (e.candidate == null) {
+//     // $('#localAnswer').html(JSON.stringify(peerConnection.localDescription));
+//   }
+// };
 
 export default peerConnection;

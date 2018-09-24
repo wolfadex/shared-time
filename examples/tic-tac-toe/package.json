@@ -5,14 +5,14 @@
   "license": "MIT",
   "scripts": {
     "dev": "webpack-dev-server",
-    "build": "NODE_ENV=production webpack",
+    "build": "rm -rf dist && NODE_ENV=production webpack",
     "deploy": "yarn build && cd ./dist && surge --domain tahi-tic-tac-toe.surge.sh"
   },
   "dependencies": {
     "@babel/polyfill": "^7.0.0",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
-    "tahi": "^1.0.0-beta.4"
+    "tahi": "^1.0.0-beta.7"
   },
   "devDependencies": {
     "@babel/core": "^7.1.0",

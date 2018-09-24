@@ -101,7 +101,7 @@ export const createStore = ({ reducer, preloadedState }) => {
     addPeer: (id, send) => {
       peers[id] = send;
 
-      return asyncDispatch;\
+      return asyncDispatch;
     },
     removePeer: (id) => {
       delete peers[id];
@@ -114,5 +114,8 @@ export const createStore = ({ reducer, preloadedState }) => {
       });
     },
     getId: () => peerId,
+    forwardMessages: (send) => {
+      messages.forEach(send);
+    },
   };
 };
