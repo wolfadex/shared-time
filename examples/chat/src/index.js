@@ -8,7 +8,6 @@ const rootEl = document.createElement('div');
 document.body.appendChild(rootEl);
 
 const p = new Peer({ key: 'lwjd5qra8257b9' });
-let peerId;
 
 const initialState = {
   messages: [],
@@ -33,7 +32,6 @@ const store = createStore({
 
 p.on('open', (id) => {
   console.log('Peer ID:', id);
-  peerId = id;
   store.setId(id);
 });
 
@@ -56,14 +54,8 @@ class Child extends Component {
     id: '',
   };
 
-  componentDidMount() {
-    setTimeout(() => {
-      this.forceUpdate();
-    }, 1000);
-  }
-
   render() {
-    const { messages = [], dispatch } = this.props;
+    const { messages = [], dispatch, getId } = this.props;
     const { text, id } = this.state;
 
     return (
@@ -162,7 +154,7 @@ class Child extends Component {
             }}
           >
             <b style={{ marginRight: '0.5rem' }}>My Id:</b>
-            {peerId}
+            {getId() || 'Loading...'}
           </label>
           <input
             type="text"

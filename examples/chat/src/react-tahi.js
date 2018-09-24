@@ -21,7 +21,7 @@ export const connect = (
     render() {
       return (
         <Consumer>
-          {({ getState, dispatch, subscribe }) => {
+          {({ getState, dispatch, subscribe, getId }) => {
             const additionalProps = mapStateToProps(getState());
             if (this.unsubscribe == null) {
               this.unsubscribe = subscribe(() => {
@@ -31,6 +31,7 @@ export const connect = (
             return createElement(WrappedComponent, {
               ...additionalProps,
               dispatch,
+              getId,
             });
           }}
         </Consumer>

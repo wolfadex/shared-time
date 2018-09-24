@@ -1,5 +1,5 @@
 export const createStore = ({ reducer, preloadedState }) => {
-  let initialState = preloadedState || reducer(undefined, { type: '@@INIT' });
+  let initialState = reducer(preloadedState, { type: '@@INIT' });
   let currentState = initialState;
   let currentListeners = [];
   let nextListeners = currentListeners;
@@ -43,10 +43,9 @@ export const createStore = ({ reducer, preloadedState }) => {
     }
 
     const listeners = (currentListeners = nextListeners);
-    for (let i = 0; i < listeners.length; i++) {
-      const listener = listeners[i];
+    listeners.forEach((listener) => {
       listener();
-    }
+    });
   }
 
   return {
@@ -113,7 +112,12 @@ export const createStore = ({ reducer, preloadedState }) => {
     },
     setId: (id) => {
       peerId = id;
+      const listeners = (currentListeners = nextListeners);
+      listeners.forEach((listener) => {
+        listener();
+      });
     },
+    getId: () => peerId,
     // onOpen: () => void;
     // onClose: () => void;
   };

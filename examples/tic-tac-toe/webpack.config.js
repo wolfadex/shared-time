@@ -23,7 +23,7 @@ module.exports = () => {
     },
     plugins: [
       new HtmlWebpackPlugin({
-        title: 'Tahi - Chat',
+        title: 'Tahi - Tic-Tac-Toe',
       }),
     ],
     devServer: {

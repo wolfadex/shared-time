@@ -1,16 +1,15 @@
 {
-  "name": "chat",
+  "name": "tic-tac-toe",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
     "dev": "webpack-dev-server",
     "build": "NODE_ENV=production webpack",
-    "deploy": "yarn build && cd ./dist && surge --domain tahi-chat.surge.sh"
+    "deploy": "yarn build && cd ./dist && surge --domain tahi-tic-tac-toe.surge.sh"
   },
   "dependencies": {
     "@babel/polyfill": "^7.0.0",
-    "peerjs": "^0.3.16",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
     "tahi": "^1.0.0-beta.4"
