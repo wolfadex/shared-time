@@ -6,7 +6,7 @@ A shared peer-to-peer state for multiple users connected by WebRTC.
 
 [Basic Chat](http://tahi-chat.surge.sh/)
 
-[Tic-Tac-Toe](tahi-tic-tac-toe.surge.sh)
+[Tic-Tac-Toe](./examples/tic-tac-toe)
 
 ## use
 
