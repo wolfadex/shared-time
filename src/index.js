@@ -106,9 +106,15 @@ export function createStore(reducer, preloadedState, enhancer) {
     });
   }
 
-  function handlePeerConnect(peer, localPeerId, handlePeerRemoved) {
+  function handlePeerConnect(
+    peer,
+    localPeerId,
+    handlePeerRemoved,
+    peerConnected,
+  ) {
     log('Awaiting peer connect...');
     peer.on('connect', () => {
+      peerConnected();
       log('Peer connected');
       const send = (message) => {
         log('Sending message to peer:', message);
@@ -257,76 +263,72 @@ export function createStore(reducer, preloadedState, enhancer) {
     });
   }
 
-  function invitePeer() {
+  function invitePeer(callback) {
     log('Inviting...');
-    return new Promise((resolve, reject) => {
-      const peer = new Peer({ initiator: true });
-      log('Invite peer');
-      peer.on('signal', (data) => {
-        log('Peer signal:', data);
-        if (data.type) {
-          log(
-            'Resolving, invite code:',
-            btoa(
-              JSON.stringify({
-                ...data,
-                peerId,
-              }),
-            ),
-          );
-          resolve({
-            inviteCode: btoa(
-              JSON.stringify({
-                ...data,
-                peerId,
-              }),
-            ),
-            completeInvitation: (response, handlePeerRemoved) => {
-              try {
-                const { peerId: localPeerId, ...answer } = JSON.parse(
-                  atob(response),
-                );
+    const peer = new Peer({ initiator: true });
+    log('Invite peer');
+    peer.on('signal', (data) => {
+      log('Host peer signal:', data);
+      log(
+        'Resolving, invite code:',
+        btoa(
+          JSON.stringify({
+            ...data,
+            peerId,
+          }),
+        ),
+      );
+      callback(null, {
+        inviteCode: btoa(
+          JSON.stringify({
+            ...data,
+            peerId,
+          }),
+        ),
+        completeInvitation: (response, handlePeerRemoved, callback) => {
+          try {
+            const { peerId: localPeerId, ...answer } = JSON.parse(
+              atob(response),
+            );
 
-                handlePeerConnect(peer, localPeerId, handlePeerRemoved);
-                peer.signal(answer);
-              } catch (e) {
-                reject(e);
-              }
-            },
-          });
-        } else {
-          log('No data type');
-        }
+            handlePeerConnect(peer, localPeerId, handlePeerRemoved, () => {
+              callback(null);
+            });
+            peer.signal(answer);
+          } catch (e) {
+            callback(e);
+          }
+        },
       });
     });
   }
 
-  function joinPeer(response, handlePeerRemoved) {
-    return new Promise((resolve, reject) => {
-      const peer = new Peer();
+  function joinPeer(response, handlePeerRemoved, callback) {
+    const peer = new Peer();
 
-      peer.on('signal', (data) => {
-        if (data.type) {
-          resolve(
-            btoa(
-              JSON.stringify({
-                ...data,
-                peerId,
-              }),
-            ),
-          );
-        }
-      });
-
-      try {
-        const { peerId: localPeerId, ...offer } = JSON.parse(atob(response));
-
-        handlePeerConnect(peer, localPeerId, handlePeerRemoved);
-        peer.signal(offer);
-      } catch (e) {
-        reject(e);
-      }
+    peer.on('signal', (data) => {
+      log('Guest peer signal:', data);
+      callback(
+        null,
+        btoa(
+          JSON.stringify({
+            ...data,
+            peerId,
+          }),
+        ),
+      );
     });
+
+    try {
+      const { peerId: localPeerId, ...offer } = JSON.parse(atob(response));
+
+      handlePeerConnect(peer, localPeerId, handlePeerRemoved, () => {
+        callback(null, null, true);
+      });
+      peer.signal(offer);
+    } catch (e) {
+      callback(e);
+    }
   }
 
   return {
@@ -373,7 +375,7 @@ export function createStore(reducer, preloadedState, enhancer) {
       };
       asyncDispatch(message);
 
-      Object.values(peers).forEach(({send}) => {
+      Object.values(peers).forEach(({ send }) => {
         send(message);
       });
 
