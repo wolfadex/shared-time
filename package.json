@@ -17,6 +17,7 @@
     "peer"
   ],
   "scripts": {
+    "dev": "rollup -c rollup.config.js -w",
     "build": "rollup -c rollup.config.js"
   },
   "dependencies": {
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.1.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
     "@babel/preset-env": "^7.1.0",
     "babel-loader": "^8.0.2",
     "prettier": "^1.14.3",

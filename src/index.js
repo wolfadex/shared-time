@@ -1,6 +1,12 @@
 const Peer = require('simple-peer');
 const cuid = require('cuid');
 
+const log = (...messages) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('tahi:', ...messages);
+  }
+};
+
 const autoMesh = {
   invitesRequested: new Set(),
   invitesAwaitingAnswer: {},
@@ -101,14 +107,18 @@ export function createStore(reducer, preloadedState, enhancer) {
   }
 
   function handlePeerConnect(peer, localPeerId, handlePeerRemoved) {
+    log('Awaiting peer connect...');
     peer.on('connect', () => {
+      log('Peer connected');
       const send = (message) => {
+        log('Sending message to peer:', message);
         peer.send(JSON.stringify(message));
       };
 
       peer.on('data', (encodedMessage) => {
         const message = new TextDecoder('utf-8').decode(encodedMessage);
         const parsedMessage = JSON.parse(message);
+        log('Peer message:', parsedMessage);
 
         switch (parsedMessage.type) {
           // Invite to auto-connect new peer
@@ -212,6 +222,7 @@ export function createStore(reducer, preloadedState, enhancer) {
       });
 
       peer.on('close', () => {
+        log('Peer connection closed. PeerId:', localPeerId);
         delete peers[localPeerId];
         handlePeerRemoved(localPeerId);
         peer.destroy();
@@ -219,7 +230,7 @@ export function createStore(reducer, preloadedState, enhancer) {
 
       peer.on('error', (err) => {
         // TODO
-        console.warn('tahi:', 'TODO: handle error', err);
+        log('TODO: handle error', err);
 
         if (/Ice connection failed/.test(err)) {
           delete peers[localPeerId];
@@ -241,16 +252,28 @@ export function createStore(reducer, preloadedState, enhancer) {
         send,
       };
 
+      log('Update new peer with my state');
       messages.forEach(send);
     });
   }
 
   function invitePeer() {
+    log('Inviting...');
     return new Promise((resolve, reject) => {
       const peer = new Peer({ initiator: true });
-
+      log('Invite peer');
       peer.on('signal', (data) => {
+        log('Peer signal:', data);
         if (data.type) {
+          log(
+            'Resolving, invite code:',
+            btoa(
+              JSON.stringify({
+                ...data,
+                peerId,
+              }),
+            ),
+          );
           resolve({
             inviteCode: btoa(
               JSON.stringify({
@@ -271,6 +294,8 @@ export function createStore(reducer, preloadedState, enhancer) {
               }
             },
           });
+        } else {
+          log('No data type');
         }
       });
     });
@@ -348,7 +373,7 @@ export function createStore(reducer, preloadedState, enhancer) {
       };
       asyncDispatch(message);
 
-      Object.values(peers).forEach((send) => {
+      Object.values(peers).forEach(({send}) => {
         send(message);
       });
 

@@ -1,5 +1,6 @@
 import resolve from 'rollup-plugin-node-resolve';
 import { terser } from 'rollup-plugin-terser';
+import babel from 'rollup-plugin-babel';
 
 export default {
   input: 'src/index.js',
@@ -7,5 +8,5 @@ export default {
     file: 'dist/main.js',
     format: 'cjs',
   },
-  plugins: [resolve(), terser()],
+  plugins: [resolve(), babel(), terser()],
 };
